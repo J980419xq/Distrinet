@@ -159,7 +159,7 @@ class LxcNode (Node):
 
         # IP address to use to administrate the machine
 
-        self.masternode = master
+        self.masterSsh = master
         self.containerInterfaces = {}
         self.containerLinks = {}
 
@@ -175,7 +175,7 @@ class LxcNode (Node):
         # prepare the machine
         # SSH with the target
         if self.target:
-            self.targetSsh = ASsh(loop=self.loop, host=self.target, username=self.username, bastion=self.bastion, client_keys=self.client_keys)
+            self.targetSsh = ASsh(loop=self.loop, host=self.target, username=self.username, bastion=self.target, client_keys=self.client_keys)
         # SSH with the node
         '''admin_ip = seddlf.admin_ip
         if "/" in admin_ip:
@@ -200,7 +200,7 @@ class LxcNode (Node):
         self.admin_ip=admin_ip
         if "/" in admin_ip:
             admin_ip, prefix = admin_ip.split("/")
-        self.ssh = ASsh(loop=self.loop, host=admin_ip, username=self.username, bastion=self.bastion, client_keys=self.client_keys)
+        self.ssh = ASsh(loop=self.loop, host=admin_ip, username=self.username, bastion=self.target, client_keys=self.client_keys)
         if autoSetDocker:
             cmds.append("docker exec {} bash -c 'echo \"{}\" >> /root/.ssh/authorized_keys'".format(self.name, self.pub_id))
             #cmds.append("docker exec {} service ssh start".format(self.name))
@@ -220,12 +220,12 @@ class LxcNode (Node):
             self.targetSsh.sendCmd(cmd)
 
     @classmethod
-    def createMasterAdminNetwork(cls, master, brname="admin-br", ip="192.168.42.1/24", **params):
+    def createMasterAdminNetwork(cls, masterSsh, brname="admin-br", ip="192.168.42.1/24", **params):
         cmds = []
         cmds.append("brctl addbr {}".format(brname))
         cmds.append("ifconfig {} {}".format(brname, ip))
         cmd = ";".join(cmds)
-        master.cmd(cmd)
+        masterSsh.cmd(cmd)
 
 
     import re
@@ -240,7 +240,7 @@ class LxcNode (Node):
         if ipmatch:
             return ipmatch[ 0 ]
         # Otherwise, look up remote server
-        output = self.masternode.cmd('getent ahostsv4 {}'.format(name))
+        output = self.masterSsh.cmd('getent ahostsv4 {}'.format(name))
 
         ips = _ipMatchRegex.findall( output )
 
@@ -466,7 +466,7 @@ class LxcNode (Node):
             self.createContainer(**self.params)
             self.waitCreated()
             self.addContainerInterface(intfName="admin", brname="admin-br")
-            self.connectToAdminNetwork(master=self.masternode.host, target=self.target, link_id=CloudLink.newLinkId(), admin_br="admin-br")
+            self.connectToAdminNetwork(master=self.masterSsh.host, target=self.target, link_id=CloudLink.newLinkId(), admin_br="admin-br")
 
             self.configureContainer()
             self.connect()

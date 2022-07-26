@@ -546,7 +546,7 @@ class Distrinet( Mininet ):
                 if node.target not in self.connectedToAdminNetwork:
                     _ip = "{}/{}".format(ipAdd( self.adminNextIP, ipBaseNum=self.adminIpBaseNum, prefixLen=self.adminPrefixLen),self.adminPrefixLen)
                     self.adminNextIP += 1
-                    cmds = cmds + node.connectToAdminNetwork(admin_ip=_ip,master=node.masternode.host, target=node.target, link_id=CloudLink.newLinkId(), admin_br="admin-br", wait=False)
+                    cmds = cmds + node.connectToAdminNetwork(admin_ip=_ip,master=self.masterhost, target=node.target, link_id=CloudLink.newLinkId(), admin_br="admin-br", wait=False)
                     self.connectedToAdminNetwork.add(node.target)
             if len (cmds) > 0:
                 cmd = ';'.join(cmds)
